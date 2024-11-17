@@ -3,7 +3,9 @@ pytz==2023.3
 feedparser==6.0.10
 aiohttp==3.8.1
 python-dotenv==0.20.0
-aria2c
+requests
+tqdm
+
 
 
 
