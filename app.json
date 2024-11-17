@@ -8,41 +8,41 @@
     "upload",
     "RSS"
   ],
-  "repository": "https://github.com/yourusername/Anime-Download-Bot",  // Change to your repository URL
-  "logo": "https://ibb.co/yourlogo",  // Add your logo URL
+  "repository": "https://github.com/yourusername/Anime-Download-Bot",
+  "logo": "https://ibb.co/yourlogo",
   "env": {
     "TG_BOT_TOKEN": {
       "description": "Your Bot token, Get it from @Botfather",
-      "value": "13409684:AAGyt6skaTFSrWQi41x7Ppr-iDZLmyRJk94"  // Replace with your actual bot token
+      "value": "13409684:AAGyt6skaTFSrWQi41x7Ppr-iDZLmyRJk94"
     },
     "OWNER_ID": {
       "description": "Owner ID to restrict bot usage",
-      "value": "5296584067"  // Replace with your actual owner ID
+      "value": "5296584067"
     },
     "API_ID": {
       "description": "Your API ID, take it from my.telegram.org",
-      "value": "26254064"  // Replace with your actual API ID
+      "value": "26254064"
     },
     "API_HASH": {
       "description": "Your API hash, take it from my.telegram.org",
-      "value": "72541d6610ae7730e6135af9423b319c"  // Replace with your actual API hash
+      "value": "72541d6610ae7730e6135af9423b319c"
     },
     "RSS_FEED_URL": {
       "description": "The RSS feed URL to fetch anime from",
-      "value": "https://subsplease.org/rss"  // Replace with your desired RSS feed URL
+      "value": "https://subsplease.org/rss"
     },
     "DOWNLOAD_PATH": {
       "description": "Path where downloaded anime will be stored",
-      "value": "/app/downloads"  // Adjust based on your preferred download directory (e.g., in cloud storage or local folder)
+      "value": "/app/downloads"
     },
     "CHECK_INTERVAL": {
       "description": "How often the bot checks for new RSS entries (in seconds)",
-      "value": "600"  // Every 10 minutes, adjust as needed
+      "value": "600"
     },
     "ADMINS": {
       "description": "A space-separated list of user_ids of Admins, they can manage the bot.",
-      "value": "5296584067",  // Replace with your actual admin ID(s)
-      "required": true
+      "value": "5296584067",
+      "required": false
     }
   },
   "buildpacks": [
