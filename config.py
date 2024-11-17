@@ -37,6 +37,8 @@ PORT = os.environ.get("PORT", "8080")
 
 TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "4"))
 
+#start message
+START_MSG = os.environ.get("START_MESSAGE", "Hello {first} I'm a bot who can store files and share it via spacial links")
 try:
     ADMINS=[]
     for x in (os.environ.get("ADMINS", "5296584067").split()):
