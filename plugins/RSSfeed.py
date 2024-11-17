@@ -5,6 +5,8 @@ import time
 from pyrogram import Client, filters
 import asyncio
 
+from bot import Bot  # Import Bot from bot.py
+
 # Load Config
 from config import BOT_TOKEN, API_ID, API_HASH, OWNER_ID, RSS_FEED_URL, DOWNLOAD_PATH, CHECK_INTERVAL
 
@@ -143,7 +145,3 @@ async def periodic_check():
         # Sleep for a set interval before checking again
         await asyncio.sleep(CHECK_INTERVAL)
 
-# Start the bot and periodic check
-if __name__ == "__main__":
-    Bot.add_event_handler(process_tasks())  # Handle automatic download/upload tasks
-    Bot.run(periodic_check())  # Periodic RSS check
