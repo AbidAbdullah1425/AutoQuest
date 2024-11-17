@@ -10,7 +10,7 @@ from logging.handlers import RotatingFileHandler
 
 
 #Bot token @Botfather
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "7438884533:AAGUCrHeOxpBJrXXu3PTyrkWPirgYkwbuIc")
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "7708810325:AAFTdEkc6BZ_OfsysafWqB-HgXAkWmsP6LE")
 
 #Your API ID from my.telegram.org
 API_ID = int(os.environ.get("API_ID", "26254064"))
@@ -24,7 +24,7 @@ CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002191732189"))
 #OWNER ID
 OWNER_ID = int(os.environ.get("OWNER_ID", "5296584067"))
 
-RSS_FEED_URL = "http://subsplease.org/rss"
+RSS_FEED_URL = "https://subsplease.org/rss/?t&r=sd"
 
 # File Paths
 ANIME_LIST_FILE = "anime_list.txt"  # File to store the dynamic list of anime
