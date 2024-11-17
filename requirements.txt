@@ -2,10 +2,8 @@ pyrogram
 pytz
 feedparser
 aiohttp
+TgCrypto
 python-dotenv
 requests
+asyncio
 tqdm
-
-
-
-
