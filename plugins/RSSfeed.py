@@ -2,8 +2,10 @@ import os
 import feedparser
 import subprocess
 import time
+import requests
 from pyrogram import Client, filters
 import asyncio
+from tqdm import tqdm
 
 from bot import Bot  # Import Bot from bot.py
 
@@ -39,32 +41,42 @@ def fetch_rss_feed():
             filtered_entries.append(entry)
     return filtered_entries
 
-# Helper Function: Download Torrent with Progress
+# Helper Function: Download Torrent with Progress using requests
 def download_torrent(link, output_path):
-    command = [
-        "aria2c",
-        "--dir", output_path,
-        "--console-log-level=error",
-        "--show-console-readout=false",
-        "--download-result=hide",
-        "--progress=dot",
-        link
-    ]
-    
-    # Start the download process
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
-    # Monitor the progress of the download
-    while True:
-        output = process.stdout.readline()
-        if output == b"" and process.poll() is not None:
-            break
-        if output:
-            # Parse the download progress from the output
-            output_str = output.decode('utf-8').strip()
-            if "download" in output_str:  # Filter relevant output
-                # Send download progress to Telegram
-                Bot.send_message(OWNER_ID, f"Download Progress: {output_str}")
+    filename = link.split('/')[-1]  # Extract the filename from the link
+    file_path = os.path.join(output_path, filename)
+
+    # Send a message that the download has started
+    Bot.send_message(OWNER_ID, f"Starting download for: {filename}")
+
+    try:
+        # Stream the file to download it in chunks
+        response = requests.get(link, stream=True)
+        total_size_in_bytes = int(response.headers.get('content-length', 0))
+
+        # Use tqdm to show download progress
+        with tqdm(total=total_size_in_bytes, unit='B', unit_scale=True) as bar:
+            with open(file_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        f.write(chunk)
+                        bar.update(len(chunk))
+                        # Send progress update to Telegram every 10% progress
+                        if bar.n % (total_size_in_bytes // 10) == 0:
+                            Bot.send_message(OWNER_ID, f"Download Progress: {bar.n / total_size_in_bytes * 100:.2f}%")
+
+        # After downloading, notify the user and upload the file
+        Bot.send_message(OWNER_ID, f"Download complete: {filename}. Now uploading...")
+
+        # Upload the downloaded file to Telegram
+        Bot.send_document(OWNER_ID, file_path, caption=f"Uploaded: {filename}")
+
+        # Clean up the file after uploading
+        os.remove(file_path)
+        Bot.send_message(OWNER_ID, f"Finished uploading: {filename}")
+
+    except Exception as e:
+        Bot.send_message(OWNER_ID, f"Error downloading {filename}: {str(e)}")
 
 # Command: Add Anime to List
 @Bot.on_message(filters.command("add_anime"))
@@ -125,7 +137,7 @@ async def process_tasks():
         if task_queue:
             task = task_queue.pop(0)  # Get the first task (most recent)
             try:
-                # Download the task
+                # Notify that the download has started
                 await Bot.send_message(OWNER_ID, f"Starting download for: {task.title}\n{task.link}")
                 download_torrent(task.link, DOWNLOAD_PATH)
 
@@ -136,7 +148,7 @@ async def process_tasks():
                 for filename in os.listdir(DOWNLOAD_PATH):
                     file_path = os.path.join(DOWNLOAD_PATH, filename)
                     if os.path.isfile(file_path):
-                        await Bot.send_document(OWNER_ID, file_path, caption=f"Uploaded: {filename}", progress=progress_callback)
+                        await Bot.send_document(OWNER_ID, file_path, caption=f"Uploaded: {filename}")
                         os.remove(file_path)  # Delete file after upload
 
                 await Bot.send_message(OWNER_ID, f"Finished uploading: {task.title}")
@@ -147,12 +159,6 @@ async def process_tasks():
 
         # Sleep for a while before checking for the next task
         await asyncio.sleep(5)  # Adjust sleep time as necessary
-
-# Progress callback for upload
-async def progress_callback(current, total, upload_file, message):
-    progress = current / total * 100
-    progress_message = f"Uploading {upload_file}: {progress:.2f}%"
-    await message.edit(progress_message)
 
 # Start the periodic check loop
 async def periodic_check():
@@ -173,14 +179,11 @@ async def periodic_check():
         # Sleep for a set interval before checking again
         await asyncio.sleep(CHECK_INTERVAL)
 
-
 # Run the bot and periodic check
 async def start_bot():
     # Start the periodic check
     asyncio.create_task(periodic_check())
-    
+
     # Process tasks from the queue
     await process_tasks()
 
-# Start the bot
-Bot.run(start_bot())
