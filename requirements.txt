@@ -2,9 +2,8 @@ pyrogram==2.0.0
 pytz==2023.3
 feedparser==6.0.10
 aiohttp==3.8.1
-python-dotenv==0.20.0  # If you want to load environment variables from a .env file locally for testing
-
-
+python-dotenv==0.20.0
+aria2c
 
 
 
