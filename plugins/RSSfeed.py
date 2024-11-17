@@ -10,7 +10,7 @@ from tqdm import tqdm
 from bot import Bot  # Import Bot from bot.py
 
 # Load Config
-from config import BOT_TOKEN, API_ID, API_HASH, OWNER_ID, RSS_FEED_URL, DOWNLOAD_PATH, CHECK_INTERVAL
+from config import TG_BOT_TOKEN, API_ID, API_HASH, OWNER_ID, RSS_FEED_URL, DOWNLOAD_PATH, CHECK_INTERVAL
 
 # Task queue
 task_queue = []
