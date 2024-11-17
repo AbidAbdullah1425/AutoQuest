@@ -1,63 +1,48 @@
 {
-  "name": "TG File Share/Sharing Bot",
-  "description": "file sharing bot store posts and it can access by special links",
+  "name": "Anime Download and Upload Bot",
+  "description": "A bot that fetches anime from RSS feed, downloads torrents, and uploads to Telegram.",
   "keywords": [
     "telegram",
-    "file",
-    "sharing"
+    "anime",
+    "download",
+    "upload",
+    "RSS"
   ],
-  "repository": "https://github.com/CodeXBotz/File-Sharing-Bot",
-  "logo": "https://ibb.co/FgPVtzw",
+  "repository": "https://github.com/yourusername/Anime-Download-Bot",  // Change to your repository URL
+  "logo": "https://ibb.co/yourlogo",  // Add your logo URL
   "env": {
     "TG_BOT_TOKEN": {
       "description": "Your Bot token, Get it from @Botfather",
-      "value": "13409684:AAGyt6skaTFSrWQi41x7Ppr-iDZLmyRJk94"
+      "value": "13409684:AAGyt6skaTFSrWQi41x7Ppr-iDZLmyRJk94"  // Replace with your actual bot token
     },
     "OWNER_ID": {
-      "description": "An integer of consisting of your owner ID",
-      "value": "5296584067"
+      "description": "Owner ID to restrict bot usage",
+      "value": "5296584067"  // Replace with your actual owner ID
     },
-    "APP_ID":{
-      "description": "your app id, take it from my.telegram.org",
-      "value": "26254064"
+    "API_ID": {
+      "description": "Your API ID, take it from my.telegram.org",
+      "value": "26254064"  // Replace with your actual API ID
     },
-    "DATABASE_URL": {
-      "description": "Paste your mongo db url",
-      "value": "mongodb+srv://abidabdullah199:abidabdullah12041@cluster0.1wqba.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    "API_HASH": {
+      "description": "Your API hash, take it from my.telegram.org",
+      "value": "72541d6610ae7730e6135af9423b319c"  // Replace with your actual API hash
     },
-    "DATABASE_NAME":{
-      "description": "Enter your DATABASE_NAME ",
-      "value": "HeavenlySubsBot"
+    "RSS_FEED_URL": {
+      "description": "The RSS feed URL to fetch anime from",
+      "value": "https://subsplease.org/rss"  // Replace with your desired RSS feed URL
     },
-    "API_HASH":{
-      "description": "your api hash, take it from my.telegram.org",
-      "value": "72541d6610ae7730e6135af9423b319c"
+    "DOWNLOAD_PATH": {
+      "description": "Path where downloaded anime will be stored",
+      "value": "/app/downloads"  // Adjust based on your preferred download directory (e.g., in cloud storage or local folder)
     },
-    "CHANNEL_ID":{
-      "description": "make a channel (database channel), then make the bot as admin in channel, and it's id",
-      "value": "-1002082927531"
-    },
-    "FORCE_SUB_CHANNEL":{
-      "description": "id of the channel or group, if you want enable force sub feature else put 0",
-      "value": "-1002021612199"
-    },
-    "START_MESSAGE": {
-      "description": "Optional: start message of bot, use HTML parsemode format",
-      "value": "Hello {first}\n\nI can store private files in Specified Channel and other users can access it from special link."
-    },
-    "FORCE_SUB_MESSAGE": {
-      "description": "Optional: Force Sub message of bot, use HTML parsemode format",
-      "value": "Hello {first}File is Ready now Join my Channal And Claim it."
+    "CHECK_INTERVAL": {
+      "description": "How often the bot checks for new RSS entries (in seconds)",
+      "value": "600"  // Every 10 minutes, adjust as needed
     },
     "ADMINS": {
-      "description": "A space separated list of user_ids of Admins, they can only create links",
-      "value": "5296584067",
-      "required": false
-    },
-    "PROTECT_CONTENT": {
-      "description": "Protect contents from getting forwarded",
-      "value": "False",
-      "required": false
+      "description": "A space-separated list of user_ids of Admins, they can manage the bot.",
+      "value": "5296584067",  // Replace with your actual admin ID(s)
+      "required": true
     }
   },
   "buildpacks": [
@@ -72,4 +57,3 @@
     }
   }
 }
-
