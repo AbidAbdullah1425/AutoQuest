@@ -8,8 +8,8 @@
     "upload",
     "RSS"
   ],
-  "repository": "https://github.com/yourusername/Anime-Download-Bot",
-  "logo": "https://ibb.co/yourlogo",
+  "repository": "https://github.com/AbidAbdullah199/AutoQuest",
+  "logo": "https://envs.sh/_BZ.jpg",
   "env": {
     "TG_BOT_TOKEN": {
       "description": "Your Bot token, Get it from @Botfather",
