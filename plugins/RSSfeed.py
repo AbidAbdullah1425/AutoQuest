@@ -15,8 +15,8 @@ task_queue = []
 
 # Helper Function: Read Anime List from File
 def read_anime_list():
-    if os.path.exists(ANIME_LIST_FILE):
-        with open(ANIME_LIST_FILE, "r") as f:
+    if os.path.exists("anime_list.txt"):
+        with open("anime_list.txt", "r") as f:
             anime_list = f.read().splitlines()
     else:
         anime_list = []
@@ -24,7 +24,7 @@ def read_anime_list():
 
 # Helper Function: Write Anime List to File
 def write_anime_list(anime_list):
-    with open(ANIME_LIST_FILE, "w") as f:
+    with open("anime_list.txt", "w") as f:
         for anime in anime_list:
             f.write(anime + "\n")
 
@@ -39,10 +39,32 @@ def fetch_rss_feed():
             filtered_entries.append(entry)
     return filtered_entries
 
-# Helper Function: Download Torrent
+# Helper Function: Download Torrent with Progress
 def download_torrent(link, output_path):
-    # Use aria2c or another method to download the torrent
-    subprocess.run(["aria2c", "-d", output_path, link])
+    command = [
+        "aria2c",
+        "--dir", output_path,
+        "--console-log-level=error",
+        "--show-console-readout=false",
+        "--download-result=hide",
+        "--progress=dot",
+        link
+    ]
+    
+    # Start the download process
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    # Monitor the progress of the download
+    while True:
+        output = process.stdout.readline()
+        if output == b"" and process.poll() is not None:
+            break
+        if output:
+            # Parse the download progress from the output
+            output_str = output.decode('utf-8').strip()
+            if "download" in output_str:  # Filter relevant output
+                # Send download progress to Telegram
+                Bot.send_message(OWNER_ID, f"Download Progress: {output_str}")
 
 # Command: Add Anime to List
 @Bot.on_message(filters.command("add_anime"))
@@ -91,7 +113,7 @@ async def check_rss(client, message):
     if not entries:
         await message.reply("No matching anime found.")
         return
-    
+
     # Add tasks to the queue
     for entry in entries:
         task_queue.append(entry)
@@ -104,27 +126,33 @@ async def process_tasks():
             task = task_queue.pop(0)  # Get the first task (most recent)
             try:
                 # Download the task
-                await Bot.send_message("me", f"Starting download for: {task.title}\n{task.link}")
+                await Bot.send_message(OWNER_ID, f"Starting download for: {task.title}\n{task.link}")
                 download_torrent(task.link, DOWNLOAD_PATH)
-                
+
                 # Wait for the download to complete before uploading
-                await Bot.send_message("me", f"Download complete: {task.title}. Now uploading...")
-                
-                # Upload the downloaded file
+                await Bot.send_message(OWNER_ID, f"Download complete: {task.title}. Now uploading...")
+
+                # Upload the downloaded file with progress
                 for filename in os.listdir(DOWNLOAD_PATH):
                     file_path = os.path.join(DOWNLOAD_PATH, filename)
                     if os.path.isfile(file_path):
-                        await Bot.send_document("me", file_path, caption=f"Uploaded: {filename}")
+                        await Bot.send_document(OWNER_ID, file_path, caption=f"Uploaded: {filename}", progress=progress_callback)
                         os.remove(file_path)  # Delete file after upload
-                
-                await Bot.send_message("me", f"Finished uploading: {task.title}")
+
+                await Bot.send_message(OWNER_ID, f"Finished uploading: {task.title}")
             except Exception as e:
-                await Bot.send_message("me", f"Error processing task {task.title}: {e}")
+                await Bot.send_message(OWNER_ID, f"Error processing task {task.title}: {e}")
         else:
-            await Bot.send_message("me", "No tasks in the queue. Waiting for new tasks.")
-        
+            await Bot.send_message(OWNER_ID, "No tasks in the queue. Waiting for new tasks.")
+
         # Sleep for a while before checking for the next task
         await asyncio.sleep(5)  # Adjust sleep time as necessary
+
+# Progress callback for upload
+async def progress_callback(current, total, upload_file, message):
+    progress = current / total * 100
+    progress_message = f"Uploading {upload_file}: {progress:.2f}%"
+    await message.edit(progress_message)
 
 # Start the periodic check loop
 async def periodic_check():
@@ -141,7 +169,18 @@ async def periodic_check():
                 print("No new episodes found.")
         except Exception as e:
             print(f"Error while checking RSS: {e}")
-        
+
         # Sleep for a set interval before checking again
         await asyncio.sleep(CHECK_INTERVAL)
 
+
+# Run the bot and periodic check
+async def start_bot():
+    # Start the periodic check
+    asyncio.create_task(periodic_check())
+    
+    # Process tasks from the queue
+    await process_tasks()
+
+# Start the bot
+Bot.run(start_bot())
