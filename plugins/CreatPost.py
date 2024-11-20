@@ -8,25 +8,11 @@ from bot import Bot
 # AniList API URL
 ANILIST_API_URL = "https://graphql.anilist.co"
 
-# Temporary storage
-chat_data = {}
-
-# Helper: Set chat data
-async def set_chat_data(chat_id, key, value):
-    if chat_id not in chat_data:
-        chat_data[chat_id] = {}
-    chat_data[chat_id][key] = value
-
-# Helper: Get chat data
-async def get_chat_data(chat_id, key):
-    return chat_data.get(chat_id, {}).get(key)
-
-# Fetch Anime Details
+# Helper Function: Fetch Anime Details from AniList
 def fetch_anime_details(anime_name):
     query = """
     query ($search: String) {
         Media(search: $search, type: ANIME) {
-            id
             title {
                 english
                 romaji
@@ -44,11 +30,11 @@ def fetch_anime_details(anime_name):
     response = requests.post(ANILIST_API_URL, json={"query": query, "variables": variables})
 
     if response.status_code == 200:
-        return response.json()["data"]["Media"]
+        return response.json().get("data", {}).get("Media", None)
     return None
 
-# Command: /anime [anime_name]
-@Bot.on_message(filters.command("anime") & filters.user(OWNER_ID))
+# Command: Fetch Anime Details
+@app.on_message(filters.command("anime") & filters.user(OWNER_ID))
 async def get_anime(client, message):
     anime_name = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else None
     if not anime_name:
@@ -63,106 +49,115 @@ async def get_anime(client, message):
 
     # Extract data
     title = details["title"]["english"] or details["title"]["romaji"]
-    cover_image = f"https://img.anili.st/media/{details['id']}"
+    cover_image = details["coverImage"]["extraLarge"]
     next_ep = details["nextAiringEpisode"]["episode"] if details["nextAiringEpisode"] else "Unknown"
-    current_ep = next_ep - 1 if next_ep != "Unknown" else "Unknown"
 
-    # Ask admin for season number
-    await message.reply("Please provide the season number (e.g., `1`, `2`, `3`, etc.).")
-    await set_chat_data(message.chat.id, "last_post", {
-        "caption": {
-            "title": title,
-            "current_ep": current_ep,
-        },
-        "cover_image": cover_image,
-        "anime_name": anime_name,
-    })
+    # Ask for the season number
+    await message.reply(
+        "Please provide the season number (e.g., `1`, `2`, `3`, etc.).",
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Cancel", callback_data="cancel_post")]]
+        ),
+    )
+    await app.set_chat_data(chat_id=message.chat.id, key="anime_data", value={"title": title, "cover_image": cover_image, "next_ep": next_ep, "anime_name": anime_name})
 
 # Handle Season Input
-@Bot.on_message(filters.text & filters.user(OWNER_ID))
+@app.on_message(filters.text & filters.user(OWNER_ID))
 async def handle_season(client, message):
-    last_post = await get_chat_data(message.chat.id, "last_post")
-    if not last_post:
-        return  # No pending season request
+    anime_data = await app.get_chat_data(chat_id=message.chat.id, key="anime_data")
+    if not anime_data:
+        return  # No pending anime post
 
-    # Try to parse season number
-    try:
-        season_number = int(message.text)
-    except ValueError:
-        await message.reply("Invalid input. Please provide a valid season number (e.g., `1`, `2`, `3`).")
+    # Save season input
+    if not message.text.isdigit():
+        await message.reply("Invalid season number. Please send a number (e.g., `1`, `2`, `3`).")
         return
+    season = message.text
+    anime_data["season"] = season
 
-    # Update caption
-    caption = f"""✨ {last_post['caption']['title']} ✨
+    # Construct caption
+    caption = f"""✨ {anime_data['title']} ✨
 ──────────────────────
-☀︎︎ Season - {season_number}
-☀︎︎ Episode - {last_post['caption']['current_ep']}
+☀︎︎ Season - {season}
+☀︎︎ Episode - {anime_data['next_ep']}
 ☀︎︎ Language - English Sub
 ──────────────────────
-Send the URL for the post (e.g., `https://example.com/download`)."""
+"""
 
-    # Send the updated caption and thumbnail
-    await message.reply_photo(
-        photo=last_post["cover_image"],
-        caption=caption
+    # Send preview with button to set URL
+    msg = await message.reply_photo(
+        photo=anime_data["cover_image"],
+        caption=caption,
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton("🏖️ Wᴀᴛᴄʜ / Dᴏᴡɴʟᴏᴀᴅ", callback_data=f"set_url_{anime_data['anime_name']}")]]
+        ),
     )
-    await set_chat_data(message.chat.id, "last_post", {**last_post, "caption": caption, "season": season_number})
-    await set_chat_data(message.chat.id, "url_request", True)
+    anime_data["msg_id"] = msg.message_id
+    anime_data["caption"] = caption
+    await app.set_chat_data(chat_id=message.chat.id, key="anime_data", value=anime_data)
+
+# Callback: Set URL
+@app.on_callback_query(filters.regex(r"set_url_(.+)") & filters.user(OWNER_ID))
+async def set_url(client, callback_query):
+    anime_data = await app.get_chat_data(chat_id=callback_query.message.chat.id, key="anime_data")
+    if not anime_data:
+        await callback_query.answer("No anime data found. Please try again.", show_alert=True)
+        return
+
+    await callback_query.message.reply("Please send the URL for the button.")
+    await app.set_chat_data(chat_id=callback_query.message.chat.id, key="url_request", value=anime_data)
 
 # Handle URL Input
-@Bot.on_message(filters.text & filters.user(OWNER_ID))
+@app.on_message(filters.text & filters.user(OWNER_ID))
 async def handle_url(client, message):
-    url_request = await get_chat_data(message.chat.id, "url_request")
+    url_request = await app.get_chat_data(chat_id=message.chat.id, key="url_request")
     if not url_request:
         return  # No pending URL request
 
-    last_post = await get_chat_data(message.chat.id, "last_post")
-    if not last_post:
-        await message.reply("Could not find the previous post details. Please try again.")
-        return
+    # Update anime data with the provided URL
+    url = message.text
+    anime_data = url_request
+    anime_data["url"] = url
 
-    # Add URL to the caption
-    final_caption = f"{last_post['caption']}\n\n[🏖️ Watch / Download]({message.text})"
-    button = InlineKeyboardMarkup([[InlineKeyboardButton("🏖️ Watch / Download", url=message.text)]])
-
-    # Save the final post details
-    await set_chat_data(message.chat.id, "final_post", {
-        "caption": final_caption,
-        "cover_image": last_post["cover_image"],
-        "button": button,
-    })
-
-    # Show confirmation with "Send Post" button
+    # Send confirmation message with button
     await message.reply_photo(
-        photo=last_post["cover_image"],
-        caption=final_caption,
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Send Post", callback_data="send_post")]])
+        photo=anime_data["cover_image"],
+        caption=anime_data["caption"],
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("🏖️ Wᴀᴛᴄʜ / Dᴏᴡɴʟᴏᴀᴅ", url=url)],
+                [InlineKeyboardButton("✅ Send Post", callback_data="send_post")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="cancel_post")],
+            ]
+        ),
     )
-    await set_chat_data(message.chat.id, "url_request", None)
+    await app.set_chat_data(chat_id=message.chat.id, key="anime_data", value=anime_data)
 
 # Callback: Send Post
-@Bot.on_callback_query(filters.regex(r"send_post") & filters.user(OWNER_ID))
+@app.on_callback_query(filters.regex(r"send_post") & filters.user(OWNER_ID))
 async def send_post(client, callback_query):
-    final_post = await get_chat_data(callback_query.message.chat.id, "final_post")
-    if not final_post:
-        await callback_query.answer("No post found to send.", show_alert=True)
+    anime_data = await app.get_chat_data(chat_id=callback_query.message.chat.id, key="anime_data")
+    if not anime_data:
+        await callback_query.answer("No anime data found. Please try again.", show_alert=True)
         return
 
-    # Send post to channels
+    # Send the post to both channels
     for channel_id in [ANIME_QUEST, ONGOING_ANIME_QUEST]:
-        await client.send_photo(
+        await app.send_photo(
             chat_id=channel_id,
-            photo=final_post["cover_image"],
-            caption=final_post["caption"],
-            reply_markup=final_post["button"],
-            parse_mode="markdown",
+            photo=anime_data["cover_image"],
+            caption=anime_data["caption"],
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("🏖️ Wᴀᴛᴄʜ / Dᴏᴡɴʟᴏᴀᴅ", url=anime_data["url"])]]
+            ),
         )
 
     await callback_query.message.reply("Post successfully sent to both channels!")
-    await callback_query.answer("Post sent!")
+    await app.set_chat_data(chat_id=callback_query.message.chat.id, key="anime_data", value=None)
 
-    # Clear data
-    await set_chat_data(callback_query.message.chat.id, "final_post", None)
-    await callback_query.message.delete()
-
+# Callback: Cancel Post
+@app.on_callback_query(filters.regex(r"cancel_post") & filters.user(OWNER_ID))
+async def cancel_post(client, callback_query):
+    await callback_query.message.reply("Post creation cancelled.")
+    await app.set_chat_data(chat_id=callback_query.message.chat.id, key="anime_data", value=None)
 
