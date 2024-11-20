@@ -30,7 +30,7 @@ ONGOING_ANIME_QUEST = int(os.environ.get("ONGOING_ANIME_QUEST", "-1002219567279"
 #OWNER ID
 OWNER_ID = int(os.environ.get("OWNER_ID", "5296584067"))
 
-RSS_FEED_URL = "https://subsplease.org/rss/?t&r=sd"
+RSS_FEED_URL = "https://subsplease.org/rss/?r=sd"
 
 # File Paths
 ANIME_LIST_FILE = "anime_list.txt"  # File to store the dynamic list of anime
