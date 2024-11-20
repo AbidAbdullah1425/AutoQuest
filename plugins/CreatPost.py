@@ -3,6 +3,8 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from config import TG_BOT_TOKEN, API_ID, API_HASH, OWNER_ID, ANIME_QUEST, ONGOING_ANIME_QUEST
 
+from bot import Bot
+
 # AniList API URL
 ANILIST_API_URL = "https://graphql.anilist.co"
 
