@@ -107,7 +107,7 @@ async def season_episode_url_handler(client, message: Message):
         button_url = user_data[user_id]["url"]
 
         post_text = (
-            f"🇯🇵{anime_title}❦︎\n"
+            f"🇯🇵{anime_title}\n"
             f"──────────────────────\n"
             f"☀︎︎ Season - {season_number:02d}\n"
             f"☀︎︎ Episode - {episode_number:02d}\n"
