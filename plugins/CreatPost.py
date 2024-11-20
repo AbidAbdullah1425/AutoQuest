@@ -125,5 +125,3 @@ async def handle_url(client, message):
     # Clear data
     await Bot.set_chat_data(chat_id=message.chat.id, key="url_request", value=None)
     await Bot.set_chat_data(chat_id=message.chat.id, key="last_post", value=None)
-
-Bot.run()
