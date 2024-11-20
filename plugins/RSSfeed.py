@@ -40,7 +40,7 @@ def fetch_rss_and_send_mirrors():
 
 
 # Command to add anime to the list (Only for owner)
-@Bot.on_message(filters.command("addanime"))
+@Bot.on_message(filters.command("addshow"))
 async def add_anime(client, message):
     if not is_owner(message.from_user.id):
         await message.reply("You are not authorized to use this command.")
