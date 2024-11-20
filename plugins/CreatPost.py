@@ -34,7 +34,7 @@ def fetch_anime_details(anime_name):
     return None
 
 # Command: Fetch Anime Details
-@app.on_message(filters.command("anime") & filters.user(OWNER_ID))
+@Bot.on_message(filters.command("anime") & filters.user(OWNER_ID))
 async def get_anime(client, message):
     anime_name = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else None
     if not anime_name:
@@ -62,7 +62,7 @@ async def get_anime(client, message):
     await app.set_chat_data(chat_id=message.chat.id, key="anime_data", value={"title": title, "cover_image": cover_image, "next_ep": next_ep, "anime_name": anime_name})
 
 # Handle Season Input
-@app.on_message(filters.text & filters.user(OWNER_ID))
+@Bot.on_message(filters.text & filters.user(OWNER_ID))
 async def handle_season(client, message):
     anime_data = await app.get_chat_data(chat_id=message.chat.id, key="anime_data")
     if not anime_data:
@@ -97,7 +97,7 @@ async def handle_season(client, message):
     await app.set_chat_data(chat_id=message.chat.id, key="anime_data", value=anime_data)
 
 # Callback: Set URL
-@app.on_callback_query(filters.regex(r"set_url_(.+)") & filters.user(OWNER_ID))
+@Bot.on_callback_query(filters.regex(r"set_url_(.+)") & filters.user(OWNER_ID))
 async def set_url(client, callback_query):
     anime_data = await app.get_chat_data(chat_id=callback_query.message.chat.id, key="anime_data")
     if not anime_data:
@@ -108,7 +108,7 @@ async def set_url(client, callback_query):
     await app.set_chat_data(chat_id=callback_query.message.chat.id, key="url_request", value=anime_data)
 
 # Handle URL Input
-@app.on_message(filters.text & filters.user(OWNER_ID))
+@Bot.on_message(filters.text & filters.user(OWNER_ID))
 async def handle_url(client, message):
     url_request = await app.get_chat_data(chat_id=message.chat.id, key="url_request")
     if not url_request:
@@ -134,7 +134,7 @@ async def handle_url(client, message):
     await app.set_chat_data(chat_id=message.chat.id, key="anime_data", value=anime_data)
 
 # Callback: Send Post
-@app.on_callback_query(filters.regex(r"send_post") & filters.user(OWNER_ID))
+@Bot.on_callback_query(filters.regex(r"send_post") & filters.user(OWNER_ID))
 async def send_post(client, callback_query):
     anime_data = await app.get_chat_data(chat_id=callback_query.message.chat.id, key="anime_data")
     if not anime_data:
@@ -156,7 +156,7 @@ async def send_post(client, callback_query):
     await app.set_chat_data(chat_id=callback_query.message.chat.id, key="anime_data", value=None)
 
 # Callback: Cancel Post
-@app.on_callback_query(filters.regex(r"cancel_post") & filters.user(OWNER_ID))
+@Bot.on_callback_query(filters.regex(r"cancel_post") & filters.user(OWNER_ID))
 async def cancel_post(client, callback_query):
     await callback_query.message.reply("Post creation cancelled.")
     await app.set_chat_data(chat_id=callback_query.message.chat.id, key="anime_data", value=None)
