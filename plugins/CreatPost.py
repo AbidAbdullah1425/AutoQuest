@@ -1,157 +1,135 @@
-import requests
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+import requests
 from config import TG_BOT_TOKEN, API_ID, API_HASH, OWNER_ID, ANIME_QUEST, ONGOING_ANIME_QUEST
 
 from bot import Bot
 
-# AniList API URL
-ANILIST_API_URL = "https://graphql.anilist.co"
+CHANNELS = ["@AnimeQuestX", "@OngoingAnimeQuest"]
 
-# Helper Function: Fetch Anime Details from AniList
-def fetch_anime_details(anime_name):
-    query = """
-    query ($search: String) {
-        Media(search: $search, type: ANIME) {
+
+
+# Temporary storage for user input
+user_data = {}
+
+@Bot.on_message(filters.command("anime") & filters.private)
+async def anime_handler(client, message: Message):
+    user_id = message.from_user.id
+
+    try:
+        # Step 1: Extract anime name
+        if len(message.command) < 2:
+            await message.reply("Please provide an anime name: `/anime [anime name]`")
+            return
+        
+        anime_name = " ".join(message.command[1:])
+        # Step 2: Fetch anime data from AniList
+        query = """
+        query ($search: String) {
+          Media(search: $search, type: ANIME) {
+            id
             title {
-                english
-                romaji
+              romaji
+              english
+              native
             }
-            coverImage {
-                extraLarge
-            }
-            nextAiringEpisode {
-                episode
-                timeUntilAiring
-            }
-            season
-            seasonYear
+          }
         }
-    }
-    """
-    variables = {"search": anime_name}
-    response = requests.post(ANILIST_API_URL, json={"query": query, "variables": variables})
+        """
+        variables = {"search": anime_name}
+        response = requests.post("https://graphql.anilist.co", json={"query": query, "variables": variables})
+        data = response.json()
+        
+        if "errors" in data:
+            await message.reply("Anime not found. Please check the name and try again.")
+            return
 
-    if response.status_code == 200:
-        data = response.json().get("data", {}).get("Media", None)
-        return data
-    return None
+        anime_id = data["data"]["Media"]["id"]
+        titles = data["data"]["Media"]["title"]
 
-# Command: Fetch Anime Details
-@Bot.on_message(filters.command("anime") & filters.user(OWNER_ID))
-async def get_anime(client, message):
-    anime_name = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else None
-    if not anime_name:
-        await message.reply("Please provide an anime name. Usage: `/anime <anime_name>`")
-        return
-
-    # Fetch anime details
-    details = fetch_anime_details(anime_name)
-    if not details:
-        await message.reply("Could not find details for the anime. Please check the name.")
-        return
-
-    # Extract data
-    title = details["title"]["english"] or details["title"]["romaji"]
-    cover_image = details["coverImage"]["extraLarge"]
-    next_ep = details["nextAiringEpisode"]["episode"] if details["nextAiringEpisode"] else "Unknown"
-    season = details["season"] or "Unknown"
-    season_year = details["seasonYear"] or "Unknown"
-    season_text = f"{season.capitalize()} {season_year}"
-
-    # Ask admin for the season if not found
-    if season == "Unknown" or season_year == "Unknown":
-        await message.reply("I couldn't fetch the season. Please provide the season manually (e.g., `1`, `2`, `3`).")
-        return
-
-    # Construct caption
-    caption = f"""✨ {title} ✨
-──────────────────────
-☀︎︎ Season - {season_text}
-☀︎︎ Episode - {next_ep}
-☀︎︎ Language - English Sub
-──────────────────────"""
-
-    # Save the post details
-    msg = await message.reply_photo(
-        photo=cover_image,
-        caption=caption,
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Set URL", callback_data=f"set_url_{anime_name}")]]
+        # Prefer English title if available; fallback to romaji or native
+        anime_title = titles.get("english") or titles.get("romaji") or titles.get("native")
+        anime_cover_url = f"https://img.anili.st/media/{anime_id}"
+        
+        # Save anime details to user_data
+        user_data[user_id] = {"anime_title": anime_title, "anime_cover_url": anime_cover_url}
+        
+        # Step 3: Prompt for Season Number
+        await message.reply_photo(
+            photo=anime_cover_url,
+            caption=f"**AutoQuests:**\n{anime_title}\n\nPlease send the season number (1 - 100).",
         )
-    )
-    msg_id = msg.message_id
-    await Bot.set_chat_data(chat_id=message.chat.id, key="last_post", value={"caption": caption, "cover_image": cover_image, "anime_name": anime_name, "msg_id": msg_id})
 
-    # Ask for the season number if the bot hasn't already received it
-    await message.reply("Please provide the season number (e.g., `1`, `2`, `3`, etc.)")
+    except Exception as e:
+        await message.reply(f"An error occurred: {e}")
 
-# Handle season input (after asking for the season number)
-@Bot.on_message(filters.text & filters.user(OWNER_ID))
-async def handle_season_input(client, message):
-    if message.text.isdigit():
-        # Store the season number provided by the admin
-        season_number = message.text.strip()
-        await Bot.set_chat_data(chat_id=message.chat.id, key="season_number", value=season_number)
 
-        # Let the admin know that the season number is recorded
-        await message.reply(f"Season number {season_number} has been recorded.")
+@Bot.on_message(filters.text & filters.private)
+async def season_episode_url_handler(client, message: Message):
+    user_id = message.from_user.id
 
-        # Ask for the URL to set the button
-        await message.reply("Please send the URL for the button (e.g., `https://example.com/download`).")
-    else:
-        # If the input is not a valid number, ask for the correct format
-        await message.reply("Invalid season number. Please provide a valid number (e.g., `1`, `2`, `3`, etc.).")
-
-# Callback: Set URL
-@Bot.on_callback_query(filters.regex(r"set_url_(.+)") & filters.user(OWNER_ID))
-async def set_url(client, callback_query):
-    anime_name = callback_query.data.split("_", 1)[1]
-    await callback_query.message.reply("Please send the URL for the button (e.g., `https://example.com/download`)")
-    await Bot.set_chat_data(chat_id=callback_query.message.chat.id, key="url_request", value=anime_name)
-
-# Handle URL input and confirm post to channels
-@Bot.on_message(filters.text & filters.user(OWNER_ID))
-async def handle_url(client, message):
-    url_request = await Bot.get_chat_data(chat_id=message.chat.id, key="url_request")
-    if not url_request:
-        return  # No pending URL request
-
-    anime_name = url_request
-    last_post = await Bot.get_chat_data(chat_id=message.chat.id, key="last_post")
-    if not last_post:
-        await message.reply("Could not find the previous post details. Please try again.")
+    # Check if the user is in the process
+    if user_id not in user_data:
+        await message.reply("Please start with `/anime [anime name]` to begin.")
         return
 
-    # Get the URL from the message
-    button_url = message.text
+    user_input = message.text.strip()
 
-    # Add the URL to the caption
-    final_caption = f"{last_post['caption']}\n\n[🏖️ Watch / Download]({button_url})"
+    # Check for season, episode, or URL input
+    if "season" not in user_data[user_id]:
+        # Validate Season Number
+        if not user_input.isdigit() or not (1 <= int(user_input) <= 100):
+            await message.reply("Invalid season number. Please provide a number between 1 and 100.")
+            return
+        user_data[user_id]["season"] = int(user_input)
+        await message.reply(f"Season {user_input} selected. Now, send the episode number (1 - 5000).")
 
-    # Send the post to the channels
-    await Bot.send_photo(
-        chat_id=ANIME_QUEST,
-        photo=last_post["cover_image"],
-        caption=final_caption,
-        parse_mode="markdown",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("🏖️ Watch / Download", url=button_url)]]
+    elif "episode" not in user_data[user_id]:
+        # Validate Episode Number
+        if not user_input.isdigit() or not (1 <= int(user_input) <= 5000):
+            await message.reply("Invalid episode number. Please provide a number between 1 and 5000.")
+            return
+        user_data[user_id]["episode"] = int(user_input)
+        await message.reply("Episode number selected. Now, send the URL for the button.")
+
+    elif "url" not in user_data[user_id]:
+        # Validate URL
+        if not (user_input.startswith("http://") or user_input.startswith("https://")):
+            await message.reply("Invalid URL. Please provide a valid URL (starting with http:// or https://).")
+            return
+        user_data[user_id]["url"] = user_input
+        
+        # Prepare and send the final post
+        anime_title = user_data[user_id]["anime_title"]
+        anime_cover_url = user_data[user_id]["anime_cover_url"]
+        season_number = user_data[user_id]["season"]
+        episode_number = user_data[user_id]["episode"]
+        button_url = user_data[user_id]["url"]
+
+        post_text = (
+            f"🇯🇵{anime_title}❦︎\n"
+            f"──────────────────────\n"
+            f"☀︎︎ Season - {season_number:02d}\n"
+            f"☀︎︎ Episode - {episode_number:02d}\n"
+            f"☀︎︎ Language - [English Sub]\n"
+            f"──────────────────────"
         )
-    )
-    await Bot.send_photo(
-        chat_id=ONGOING_ANIME_QUEST,
-        photo=last_post["cover_image"],
-        caption=final_caption,
-        parse_mode="markdown",
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("🏖️ Watch / Download", url=button_url)]]
+
+        # Create inline button
+        button = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("🏖️ Wᴀᴛᴄʜ / Dᴏᴡɴʟᴏᴀᴅ", url=button_url)]]
         )
-    )
 
-    # Confirm post
-    await message.reply("Post successfully sent to both channels!")
+        # Send post to channels
+        for channel in CHANNELS:
+            await client.send_photo(
+                chat_id=channel,
+                photo=anime_cover_url,
+                caption=post_text,
+                reply_markup=button
+            )
+        
+        await message.reply("Post created and sent to channels!")
 
-    # Clear data
-    await Bot.set_chat_data(chat_id=message.chat.id, key="url_request", value=None)
-    await Bot.set_chat_data(chat_id=message.chat.id, key="last_post", value=None)
+        # Clean up user data
+        user_data.pop(user_id)
