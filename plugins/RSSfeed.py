@@ -4,6 +4,7 @@ import asyncio
 from pyrogram import Client, filters
 from config import TG_BOT_TOKEN, API_ID, API_HASH, OWNER_ID, RSS_FEED_URL, CHECK_INTERVAL, GROUP_ID
 
+from bot import Bot
 
 # Helper Function: Read Anime List from File
 def read_anime_list():
