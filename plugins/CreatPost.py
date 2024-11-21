@@ -12,7 +12,15 @@ CHANNELS = ["@AnimeQuestX", "@OngoingAnimeQuest"]
 # Temporary storage for user input
 user_data = {}
 
-@Bot.on_message(filters.command("anime") & filters.private)
+
+
+
+
+
+
+
+
+@Bot.on_message(filters.private & filters.user(OWNER_ID) & filters.command("anime"))
 async def anime_handler(client, message: Message):
     user_id = message.from_user.id
 
@@ -64,7 +72,7 @@ async def anime_handler(client, message: Message):
         await message.reply(f"An error occurred: {e}")
 
 
-@Bot.on_message(filters.text & filters.private)
+@Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
     user_id = message.from_user.id
 
