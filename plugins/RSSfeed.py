@@ -32,7 +32,7 @@ def fetch_rss_and_send_mirrors():
             sent_anime_titles.append(anime_name)
 
 # Command to add anime to the list (Only for owner)
-@Bot.on_message(filters.command("addshow") & filters.user(OWNER_ID))
+@Bot.on_message(filters.private & filters.user(OWNER_ID) & filters.command('addshow'))
 async def add_anime(client, message):
     anime_name = " ".join(message.command[1:])
     if anime_name:
@@ -42,7 +42,7 @@ async def add_anime(client, message):
         await message.reply("Please provide an anime name. Usage: `/addshow [anime name]`")
 
 # Command to view the list of added anime (Only for owner)
-@Bot.on_message(filters.command("showlist") & filters.user(OWNER_ID))
+@Bot.on_message(filters.private & filters.user(OWNER_ID) & filters.command('showlist'))
 async def show_list(client, message):
     if anime_list:
         anime_list_text = "\n".join([f"- {anime}" for anime in anime_list])
@@ -51,7 +51,7 @@ async def show_list(client, message):
         await message.reply("The anime list is empty. Add anime using `/addshow`.")
 
 # Command to start fetching and processing the RSS feed (Only for owner)
-@Bot.on_message(filters.command("stasks") & filters.user(OWNER_ID))
+@Bot.on_message(filters.private & filters.user(OWNER_ID) & filters.command('starttasks'))
 async def start_tasks(client, message):
     await message.reply("Started monitoring the RSS feed. Updates will be sent to the group.")
     while True:
