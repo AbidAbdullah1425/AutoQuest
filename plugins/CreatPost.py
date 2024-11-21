@@ -7,20 +7,10 @@ from bot import Bot
 
 CHANNELS = ["@AnimeQuestX", "@OngoingAnimeQuest"]
 
-
-
 # Temporary storage for user input
 user_data = {}
 
-
-
-
-
-
-
-
-
-@Bot.on_message(filters.private & filters.user(OWNER_ID) & filters.command("anime"))
+@Bot.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
 async def anime_handler(client, message: Message):
     user_id = message.from_user.id
 
@@ -29,7 +19,7 @@ async def anime_handler(client, message: Message):
         if len(message.command) < 2:
             await message.reply("Please provide an anime name: `/anime [anime name]`")
             return
-        
+
         anime_name = " ".join(message.command[1:])
         # Step 2: Fetch anime data from AniList
         query = """
@@ -47,7 +37,7 @@ async def anime_handler(client, message: Message):
         variables = {"search": anime_name}
         response = requests.post("https://graphql.anilist.co", json={"query": query, "variables": variables})
         data = response.json()
-        
+
         if "errors" in data:
             await message.reply("Anime not found. Please check the name and try again.")
             return
@@ -58,10 +48,14 @@ async def anime_handler(client, message: Message):
         # Prefer English title if available; fallback to romaji or native
         anime_title = titles.get("english") or titles.get("romaji") or titles.get("native")
         anime_cover_url = f"https://img.anili.st/media/{anime_id}"
-        
+
         # Save anime details to user_data
-        user_data[user_id] = {"anime_title": anime_title, "anime_cover_url": anime_cover_url}
-        
+        user_data[user_id] = {
+            "anime_title": anime_title,
+            "anime_cover_url": anime_cover_url,
+            "in_progress": True  # Set in-progress state
+        }
+
         # Step 3: Prompt for Season Number
         await message.reply_photo(
             photo=anime_cover_url,
@@ -77,7 +71,7 @@ async def season_episode_url_handler(client, message: Message):
     user_id = message.from_user.id
 
     # Check if the user is in the process
-    if user_id not in user_data:
+    if user_id not in user_data or not user_data[user_id].get("in_progress"):
         await message.reply("Please start with `/anime [anime name]` to begin.")
         return
 
@@ -106,7 +100,7 @@ async def season_episode_url_handler(client, message: Message):
             await message.reply("Invalid URL. Please provide a valid URL (starting with http:// or https://).")
             return
         user_data[user_id]["url"] = user_input
-        
+
         # Prepare and send the final post
         anime_title = user_data[user_id]["anime_title"]
         anime_cover_url = user_data[user_id]["anime_cover_url"]
@@ -136,8 +130,9 @@ async def season_episode_url_handler(client, message: Message):
                 caption=post_text,
                 reply_markup=button
             )
-        
+
         await message.reply("Post created and sent to channels!")
 
-        # Clean up user data
+        # Clean up user data and turn off the process
         user_data.pop(user_id)
+
