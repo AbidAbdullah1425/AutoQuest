@@ -48,22 +48,17 @@ async def anime_handler(client, message: Message):
         anime_title = titles.get("english") or titles.get("romaji") or titles.get("native")
         anime_cover_url = f"https://img.anili.st/media/{anime_id}"
 
-        # Save anime details to user_data and set in-progress flag
+        # Save anime details to user_data
         user_data[user_id] = {
             "anime_title": anime_title,
             "anime_cover_url": anime_cover_url,
             "in_progress": True  # Set in-progress state
         }
 
-        # Step 3: Prompt for Season Number with Cancel Button
-        cancel_button = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_process")]]
-        )
-
+        # Step 3: Prompt for Season Number
         await message.reply_photo(
             photo=anime_cover_url,
             caption=f"**AutoQuests:**\n{anime_title}\n\nPlease send the season number (1 - 100).",
-            reply_markup=cancel_button
         )
 
     except Exception as e:
@@ -73,11 +68,6 @@ async def anime_handler(client, message: Message):
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
     user_id = message.from_user.id
-
-    # Check if the user is in the process
-    if user_id not in user_data or not user_data[user_id].get("in_progress"):
-        await message.reply("Please start with `/anime [anime name]` to begin.")
-        return
 
     user_input = message.text.strip()
 
@@ -139,16 +129,4 @@ async def season_episode_url_handler(client, message: Message):
 
         # Clean up user data and turn off the process
         user_data.pop(user_id)
-
-
-# Handling Cancel Button Press
-@Bot.on_callback_query(filters.regex("cancel_process"))
-async def cancel_process(client, callback_query):
-    user_id = callback_query.from_user.id
-
-    if user_id in user_data and user_data[user_id].get("in_progress"):
-        # Cancel the process
-        user_data.pop(user_id)
-        await callback_query.message.reply("Process has been canceled. You can start a new one anytime by using `/anime [anime name]`.")
-        await callback_query.answer()
 
