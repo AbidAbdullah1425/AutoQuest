@@ -63,13 +63,4 @@ async def start_tasks(client, message):
     
     while True:
         fetch_rss_and_send_mirrors()  # Fetch and send mirrors
-        sleep(3600)  # Wait for 1 hour before fetching again
-
-
-# Main function to run the bot
-def main():
-    app.run()  # Start the Pyrogram client and bot
-
-
-if __name__ == '__main__':
-    main()
+        sleep(150)  # Wait for 2 min before fetching again
