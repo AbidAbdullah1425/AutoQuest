@@ -6,7 +6,64 @@ from bot import Bot
 
 CHANNELS = ["@AnimeQuestX", "@OngoingAnimeQuest"]
 
+# Temporary storage for user input (Ensure this is defined)
 user_data = {}
+
+@Bot.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
+async def anime_handler(client, message: Message):
+    user_id = message.from_user.id
+
+    try:
+        # Step 1: Extract anime name
+        if len(message.command) < 2:
+            await message.reply("Please provide an anime name: `/anime [anime name]`")
+            return
+
+        anime_name = " ".join(message.command[1:])
+        # Step 2: Fetch anime data from AniList
+        query = """
+        query ($search: String) {
+          Media(search: $search, type: ANIME) {
+            id
+            title {
+              romaji
+              english
+              native
+            }
+          }
+        }
+        """
+        variables = {"search": anime_name}
+        response = requests.post("https://graphql.anilist.co", json={"query": query, "variables": variables})
+        data = response.json()
+
+        if "errors" in data:
+            await message.reply("Anime not found. Please check the name and try again.")
+            return
+
+        anime_id = data["data"]["Media"]["id"]
+        titles = data["data"]["Media"]["title"]
+
+        # Prefer English title if available; fallback to romaji or native
+        anime_title = titles.get("english") or titles.get("romaji") or titles.get("native")
+        anime_cover_url = f"https://img.anili.st/media/{anime_id}"
+
+        # Save anime details to user_data
+        user_data[user_id] = {
+            "anime_title": anime_title,
+            "anime_cover_url": anime_cover_url,
+            "in_progress": True  # Set in-progress state
+        }
+
+        # Step 3: Prompt for Season Number
+        await message.reply_photo(
+            photo=anime_cover_url,
+            caption=f"**AutoQuests:**\n{anime_title}\n\nPlease send the season number (1 - 100).",
+        )
+
+    except Exception as e:
+        await message.reply(f"An error occurred: {e}")
+
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
