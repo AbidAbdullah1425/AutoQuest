@@ -75,7 +75,7 @@ async def start_tasks(client, message):
         sleep(300)  # Wait 5 minutes before checking again
 
 # Prevent the bot from responding to random text messages
-@Bot.on_message(filters.private & filters.user(OWNER_ID)
+@Bot.on_message(filters.private & filters.user(OWNER_ID))
 async def ignore_text_messages(client, message):
     # Just return so it ignores any text that's not a command
     pass
