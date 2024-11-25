@@ -6,6 +6,8 @@ from bot import Bot
 
 CHANNELS = ["@AnimeQuestX", "@OngoingAnimeQuest"]
 
+user_data = {}
+
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
     user_id = message.from_user.id
