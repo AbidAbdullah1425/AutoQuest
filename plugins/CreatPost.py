@@ -130,7 +130,7 @@ async def season_episode_url_handler(client, message: Message):
                             photo=anime_cover_url,
                             caption=post_text,
                             reply_markup=button,
-                            parse_mode="MarkdownV2"
+                            parse_mode="Markdown"
                         )
                     except Exception as e:
                         await message.reply(f"Failed to post to {channel}: {e}")
