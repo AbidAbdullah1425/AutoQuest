@@ -72,7 +72,3 @@ async def start_tasks(client, message):
     while True:
         fetch_rss_and_send_mirrors()  # Fetch and send updates
         sleep(300)  # Wait 5 minutes before checking again
-
-# Main function
-if __name__ == "__main__":
-    Bot.run()
