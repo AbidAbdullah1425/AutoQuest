@@ -79,7 +79,7 @@ async def season_episode_url_handler(client, message: Message):
 
     # Ensure user_data is initialized for the user
     if user_id not in user_data:
-        await message.reply("Please start with `/anime [anime name]` to initialize.")
+        await message.reply("Please start with `/anime [anime name]` to f the dummy.")
         return
 
     # Check for season input
