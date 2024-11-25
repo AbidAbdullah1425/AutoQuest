@@ -59,6 +59,7 @@ async def add_anime(client, message):
 # Command to view the list of tracked anime (Owner-only)
 @Bot.on_message(filters.private & filters.user(OWNER_ID) & filters.command('showlist'))
 async def show_list(client, message):
+    # Check if anime_list is empty and respond only if it's empty
     if anime_list:
         anime_list_text = "\n".join([f"- {anime}" for anime in anime_list])
         await message.reply(f"Here is the list of tracked anime:\n\n{anime_list_text}")
@@ -72,3 +73,13 @@ async def start_tasks(client, message):
     while True:
         fetch_rss_and_send_mirrors()  # Fetch and send updates
         sleep(300)  # Wait 5 minutes before checking again
+
+# Prevent the bot from responding to random text messages
+@Bot.on_message(filters.private & filters.user(OWNER_ID) & ~filters.command())
+async def ignore_text_messages(client, message):
+    # Just return so it ignores any text that's not a command
+    pass
+
+# Main function
+if __name__ == "__main__":
+    Bot.run()
