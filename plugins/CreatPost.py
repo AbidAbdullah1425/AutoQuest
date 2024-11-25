@@ -77,69 +77,65 @@ async def season_episode_url_handler(client, message: Message):
     user_id = message.from_user.id
     user_input = message.text.strip()
 
-    # Ensure user_data is initialized for the user
-    if user_id not in user_data or not user_data[user_id].get("in_progress", False):
-        await message.reply("Please start with `/anime [anime name]` to begin the process.")
+    # Check if the user has started the anime process
+    if user_id not in user_data or "in_progress" not in user_data[user_id]:
         return
 
-    # Check for season input
+    # Check for season input (ensure only the season number is accepted)
     if "season" not in user_data[user_id]:
-        # Validate Season Number
-        if not user_input.isdigit() or not (1 <= int(user_input) <= 100):
+        if user_input.isdigit() and 1 <= int(user_input) <= 100:
+            user_data[user_id]["season"] = int(user_input)
+            await message.reply(f"Season {user_input} selected. Now, send the episode number (1 - 5000).")
+        else:
             await message.reply("Invalid season number. Please provide a number between 1 and 100.")
-            return
-        user_data[user_id]["season"] = int(user_input)
-        await message.reply(f"Season {user_input} selected. Now, send the episode number (1 - 5000).")
         return
 
     # Check for episode input
     if "episode" not in user_data[user_id]:
-        # Validate Episode Number
-        if not user_input.isdigit() or not (1 <= int(user_input) <= 5000):
+        if user_input.isdigit() and 1 <= int(user_input) <= 5000:
+            user_data[user_id]["episode"] = int(user_input)
+            await message.reply("Episode number selected. Now, send the URL for the button.")
+        else:
             await message.reply("Invalid episode number. Please provide a number between 1 and 5000.")
-            return
-        user_data[user_id]["episode"] = int(user_input)
-        await message.reply("Episode number selected. Now, send the URL for the button.")
         return
 
     # Check for URL input
     if "url" not in user_data[user_id]:
-        # Validate URL
-        if not (user_input.startswith("http://") or user_input.startswith("https://")):
-            await message.reply("Invalid URL. Please provide a valid URL (starting with http:// or https://).")
-            return
-        user_data[user_id]["url"] = user_input
+        if user_input.startswith("http://") or user_input.startswith("https://"):
+            user_data[user_id]["url"] = user_input
 
-        # Prepare and send the final post
-        anime_title = user_data[user_id]["anime_title"]
-        anime_cover_url = user_data[user_id]["anime_cover_url"]
-        season_number = user_data[user_id]["season"]
-        episode_number = user_data[user_id]["episode"]
-        button_url = user_data[user_id]["url"]
+            # Prepare and send the final post
+            anime_title = user_data[user_id]["anime_title"]
+            anime_cover_url = user_data[user_id]["anime_cover_url"]
+            season_number = user_data[user_id]["season"]
+            episode_number = user_data[user_id]["episode"]
+            button_url = user_data[user_id]["url"]
 
-        # Reformatting the post according to the new structure
-        post_text = (
-            f"> ***{anime_title}***\n"
-            f"Season {season_number} | Episode {episode_number} | Eng Sub"
-        )
-
-        # Create inline button
-        button = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("🏖️ Wᴀᴛᴄʜ / Dᴏᴡɴʟᴏᴀᴅ", url=button_url)]]
-        )
-
-        # Send post to channels
-        for channel in CHANNELS:
-            await client.send_photo(
-                chat_id=channel,
-                photo=anime_cover_url,
-                caption=post_text,
-                reply_markup=button,
-                parse_mode="MarkdownV2"  # Ensure Markdown v2 formatting
+            # Reformatting the post according to the new structure
+            post_text = (
+                f"> ***{anime_title}***\n"
+                f"Season {season_number} | Episode {episode_number} | Eng Sub"
             )
 
-        await message.reply("Post created and sent to channels!")
+            # Create inline button
+            button = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("🏖️ Wᴀᴛᴄʜ / Dᴏᴡɴʟᴏᴀᴅ", url=button_url)]]
+            )
 
-        # Reset user data and end the process
-        await reset_user_data(user_id)
+            # Send post to channels
+            for channel in CHANNELS:
+                await client.send_photo(
+                    chat_id=channel,
+                    photo=anime_cover_url,
+                    caption=post_text,
+                    reply_markup=button,
+                    parse_mode="MarkdownV2"  # Ensure Markdown v2 formatting
+                )
+
+            await message.reply("Post created and sent to channels!")
+
+            # Reset user data and end the process
+            await reset_user_data(user_id)
+        else:
+            await message.reply("Invalid URL. Please provide a valid URL (starting with http:// or https://).")
         return
