@@ -6,8 +6,15 @@ from bot import Bot
 
 CHANNELS = ["@AnimeQuestX", "@OngoingAnimeQuest"]
 
-# Temporary storage for user input (Ensure this is defined)
+# Temporary storage for user input
 user_data = {}
+
+async def reset_user_data(user_id):
+    """
+    Function to reset user data after the process is complete
+    """
+    if user_id in user_data:
+        user_data.pop(user_id)
 
 @Bot.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
 async def anime_handler(client, message: Message):
@@ -110,13 +117,10 @@ async def season_episode_url_handler(client, message: Message):
         episode_number = user_data[user_id]["episode"]
         button_url = user_data[user_id]["url"]
 
+        # Reformatting the post according to the new structure
         post_text = (
-            f"🇯🇵 {anime_title}\n"
-            f"──────────────────────\n"
-            f"☀︎︎ Season - {season_number:02d}\n"
-            f"☀︎︎ Episode - {episode_number:02d}\n"
-            f"☀︎︎ Language - [English Sub]\n"
-            f"──────────────────────"
+            f"> ***{anime_title}***\n"
+            f"Season {season_number} | Episode {episode_number} | Eng Sub"
         )
 
         # Create inline button
@@ -130,11 +134,12 @@ async def season_episode_url_handler(client, message: Message):
                 chat_id=channel,
                 photo=anime_cover_url,
                 caption=post_text,
-                reply_markup=button
+                reply_markup=button,
+                parse_mode="MarkdownV2"  # Ensure Markdown v2 formatting
             )
 
         await message.reply("Post created and sent to channels!")
 
-        # Clean up user data and turn off the process
-        user_data.pop(user_id)
+        # Reset user data and end the process
+        await reset_user_data(user_id)
         return
