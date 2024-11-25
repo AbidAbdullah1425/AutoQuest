@@ -80,6 +80,4 @@ async def ignore_text_messages(client, message):
     # Just return so it ignores any text that's not a command
     pass
 
-# Main function
-if __name__ == "__main__":
-    Bot.run()
+
