@@ -7,3 +7,4 @@ python-dotenv
 requests
 asyncio
 tqdm
+telegramify_markdown
