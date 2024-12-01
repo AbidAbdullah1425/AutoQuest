@@ -16,7 +16,7 @@ async def reset_user_data(user_id):
     if user_id in user_data:
         user_data.pop(user_id)
 
-@Client.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
+@Bot.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
 async def anime_handler(client, message: Message):
     user_id = message.from_user.id
 
@@ -72,7 +72,7 @@ async def anime_handler(client, message: Message):
         await message.reply(f"An error occurred: {e}")
 
 
-@Client.on_message(filters.text & filters.private & filters.user(OWNER_ID))
+@Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
     user_id = message.from_user.id
     user_input = message.text.strip()
