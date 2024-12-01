@@ -4,7 +4,7 @@ import requests
 from config import TG_BOT_TOKEN, API_ID, API_HASH, OWNER_ID, ANIME_QUEST, ONGOING_ANIME_QUEST
 from bot import Bot
 
-CHANNELS = ["@AnimeQuestX", "@OngoingAnimeQuest"]
+CHANNELS = ["@AnimeQuestX", "@AnimeQuestOngoing"]
 
 # Temporary storage for user input
 user_data = {}
@@ -114,8 +114,8 @@ async def season_episode_url_handler(client, message: Message):
                 button_url = user_data[user_id]["url"]
 
                 post_text = (
-                    f"> ***{anime_title}***\n"
-                    f"Season {season_number} | Episode {episode_number} | Eng Sub"
+                    f"<b>{anime_title}</b>\n"
+                    f"<blockquote>Season {season_number} | Episode {episode_number} | Eng Sub</blockquote>"
                 )
 
                 button = InlineKeyboardMarkup(
@@ -130,7 +130,7 @@ async def season_episode_url_handler(client, message: Message):
                             photo=anime_cover_url,
                             caption=post_text,
                             reply_markup=button,
-                            parse_mode="Markdown"
+                            parse_mode="HTML"  # Use HTML parse mode for the blockquote
                         )
                     except Exception as e:
                         await message.reply(f"Failed to post to {channel}: {e}")
