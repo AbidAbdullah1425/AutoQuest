@@ -65,12 +65,11 @@ async def anime_handler(client, message: Message):
         # Step 3: Prompt for Season Number
         await message.reply_photo(
             photo=anime_cover_url,
-            caption=f"**AutoQuests:**\n{anime_title}\n\nPlease send the season number (1 - 100).",
+            caption=f"**_ __{anime_title}__ _**\n\nPlease send the season number (1 - 100).",
         )
 
     except Exception as e:
         await message.reply(f"An error occurred: {e}")
-
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
@@ -114,8 +113,8 @@ async def season_episode_url_handler(client, message: Message):
                 button_url = user_data[user_id]["url"]
 
                 post_text = (
-                    f"<b>{anime_title}</b>\n"
-                    f"<blockquote>Season {season_number} | Episode {episode_number} | Eng Sub</blockquote>"
+                    f"**_ __{anime_title}__ _**\n"
+                    f"Season {season_number} | Episode {episode_number} | Eng Sub"
                 )
 
                 button = InlineKeyboardMarkup(
@@ -130,7 +129,7 @@ async def season_episode_url_handler(client, message: Message):
                             photo=anime_cover_url,
                             caption=post_text,
                             reply_markup=button,
-                            parse_mode="HTML"  # Use HTML parse mode for the blockquote
+                            parse_mode="markdown"  # Use markdown parse mode
                         )
                     except Exception as e:
                         await message.reply(f"Failed to post to {channel}: {e}")
