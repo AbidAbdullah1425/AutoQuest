@@ -65,11 +65,12 @@ async def anime_handler(client, message: Message):
         # Step 3: Prompt for Season Number
         await message.reply_photo(
             photo=anime_cover_url,
-            caption=f"**_ __{anime_title}__ _**\n\nPlease send the season number (1 - 100).",
+            caption=f"*_{anime_title}_*\n\nPlease send the season number (1 - 100).",
         )
 
     except Exception as e:
         await message.reply(f"An error occurred: {e}")
+
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
@@ -113,7 +114,7 @@ async def season_episode_url_handler(client, message: Message):
                 button_url = user_data[user_id]["url"]
 
                 post_text = (
-                    f"**_ __{anime_title}__ _**\n"
+                    f"*_{anime_title}_*\n"
                     f"Season {season_number} | Episode {episode_number} | Eng Sub"
                 )
 
@@ -128,8 +129,7 @@ async def season_episode_url_handler(client, message: Message):
                             chat_id=channel,
                             photo=anime_cover_url,
                             caption=post_text,
-                            reply_markup=button,
-                            parse_mode="markdown"  # Use markdown parse mode
+                            reply_markup=button
                         )
                     except Exception as e:
                         await message.reply(f"Failed to post to {channel}: {e}")
