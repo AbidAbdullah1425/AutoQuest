@@ -31,7 +31,7 @@ def send_quote(channel_username, text):
         print("Quote sent successfully.")
 
 # Command handler for /send
-@app.on_message(filters.command("send"))
+@Bot.on_message(filters.command("send"))
 def send_command_handler(client, message):
     channel_username = "@AnimeQuestFamily"
     send_quote(channel_username, converted_message)
