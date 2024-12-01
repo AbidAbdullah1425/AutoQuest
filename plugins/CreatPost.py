@@ -116,7 +116,7 @@ async def season_episode_url_handler(client, message: Message):
                 # Apply quote format to anime title
                 post_text = (
                     f"> {anime_title}\n\n"
-                    f"**Season {season_number}** | **Episode {episode_number}** | ```Eng Sub```"
+                    f"**Season {season_number}** | **Episode {episode_number}** | `Eng Sub`"
                 )
 
                 button = InlineKeyboardMarkup(
