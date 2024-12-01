@@ -1,5 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.enums import ParseMode
 import requests
 from config import TG_BOT_TOKEN, API_ID, API_HASH, OWNER_ID
 from bot import Bot
@@ -71,7 +72,6 @@ async def anime_handler(client, message: Message):
     except Exception as e:
         await message.reply(f"An error occurred: {e}")
 
-
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
     user_id = message.from_user.id
@@ -113,8 +113,9 @@ async def season_episode_url_handler(client, message: Message):
                 episode_number = user_data[user_id]["episode"]
                 button_url = user_data[user_id]["url"]
 
+                # Apply quote format to anime title
                 post_text = (
-                    f"{anime_title}\n"
+                    f"> {anime_title}\n"
                     f"Season {season_number} | Episode {episode_number} | Eng Sub"
                 )
 
@@ -129,6 +130,7 @@ async def season_episode_url_handler(client, message: Message):
                             chat_id=channel,
                             photo=anime_cover_url,
                             caption=post_text,
+                            parse_mode=ParseMode.MARKDOWN,
                             reply_markup=button
                         )
                     except Exception as e:
