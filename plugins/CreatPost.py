@@ -5,7 +5,7 @@ import requests
 from config import TG_BOT_TOKEN, API_ID, API_HASH, OWNER_ID
 from bot import Bot
 
-CHANNELS = ["@AnimeQuestX", "@AnimeQuestOngoing"]
+CHANNELS = ["@AnimeQuestX", "@AnimeQuestOngoing", "@AnimeBili"]
 
 # Temporary storage for user input
 user_data = {}
