@@ -6,4 +6,5 @@ python-dotenv
 requests
 asyncio
 tqdm
+##own pyrogram repo
 git+https://github.com/abidabdullah-cloud/pyrogram.git@dev#egg=pyrogram
