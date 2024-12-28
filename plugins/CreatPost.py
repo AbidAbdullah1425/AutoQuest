@@ -1,9 +1,12 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.enums import ParseMode
 import requests
+import logging
 from config import TG_BOT_TOKEN, API_ID, API_HASH, OWNER_ID
 from bot import Bot
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 CHANNELS = ["Ongoing_AnimePixelify", "@AnimeBili"]
 
@@ -21,14 +24,16 @@ async def reset_user_data(user_id):
 async def anime_handler(client, message: Message):
     user_id = message.from_user.id
 
-    try:
-        # Step 1: Extract anime name
-        if len(message.command) < 2:
-            await message.reply("Please provide an anime name: `/anime [anime name]`")
-            return
+    # Check if the command has the required anime name
+    if len(message.command) < 2:
+        logger.error("Anime name is missing. Usage: /anime [anime name]")
+        return  # Exit without replying
 
-        anime_name = " ".join(message.command[1:])
-        # Step 2: Fetch anime data from AniList
+    # Extract anime name from the command
+    anime_name = " ".join(message.command[1:])
+
+    try:
+        # Fetch anime data from AniList
         query = """
         query ($search: String) {
           Media(search: $search, type: ANIME) {
@@ -46,8 +51,8 @@ async def anime_handler(client, message: Message):
         data = response.json()
 
         if "errors" in data:
-            await message.reply("Anime not found. Please check the name and try again.")
-            return
+            logger.error("Anime not found. Name provided: %s", anime_name)
+            return  # Exit without replying
 
         anime_id = data["data"]["Media"]["id"]
         titles = data["data"]["Media"]["title"]
@@ -63,24 +68,23 @@ async def anime_handler(client, message: Message):
             "in_progress": True  # Set in-progress state
         }
 
-        # Step 3: Prompt for Season Number
+        # Prompt for Season Number
         await message.reply_photo(
             photo=anime_cover_url,
             caption=f"{anime_title}\n\nPlease send the season number (1 - 100).",
         )
 
     except Exception as e:
-        await message.reply(f"An error occurred: {e}")
+        logger.exception("An error occurred while processing the /anime command.")
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def season_episode_url_handler(client, message: Message):
     user_id = message.from_user.id
     user_input = message.text.strip()
 
-    # Ensure user_data is initialized for the user
+    # Ignore messages that don't correspond to a valid /anime process
     if user_id not in user_data or "in_progress" not in user_data[user_id]:
-        await message.reply("Please start with `/anime [anime name]` to begin the process.")
-        return
+        return  # Ignore irrelevant inputs
 
     try:
         # Check for season input
@@ -130,16 +134,15 @@ async def season_episode_url_handler(client, message: Message):
                             chat_id=channel,
                             photo=anime_cover_url,
                             caption=post_text,
-                            parse_mode=ParseMode.MARKDOWN,
                             reply_markup=button
                         )
                     except Exception as e:
-                        await message.reply(f"Failed to post to {channel}: {e}")
+                        logger.error("Failed to post to %s: %s", channel, e)
 
-                await message.reply("Post created and sent to channels!")
+                logger.info("Post created and sent to channels!")
                 await reset_user_data(user_id)  # Reset user data
             else:
                 await message.reply("Invalid URL. Please provide a valid URL (starting with http:// or https://).")
             return
     except Exception as e:
-        await message.reply(f"An error occurred: {e}")
+        logger.exception("An error occurred while processing user input.")
