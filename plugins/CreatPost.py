@@ -8,7 +8,7 @@ from bot import Bot
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-CHANNELS = ["Ongoing_AnimePixelify", "@AnimeBili"]
+CHANNELS = ["@AnimeWillow", "@AnimeBili"]
 
 # Temporary storage for user input
 user_data = {}
